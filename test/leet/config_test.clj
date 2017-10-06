@@ -45,6 +45,13 @@
                                                        :test "test-value"
                                                        :production "the-production-value"))))))
 
+(deftest leetconfig-initialization-test
+
+  (testing "must evaluate initial environment argument"
+    (is (= {:key "test-value"} (leetconfig (identity :test)
+                                           (:key "my-value"
+                                             :test "test-value"))))))
+
 (defn value-provider-fn
   [key]
   (str "provided-value-for-" (name key)))

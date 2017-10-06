@@ -17,4 +17,5 @@
       (call-if-fn key default))))
 
 (defmacro leetconfig [env-key & defs]
-  (into {} (map (fn [[key default & overrides]] (vector key `(c ~env-key ~key ~default ~@overrides))) defs)))
+  (let [ek (eval env-key)]
+    (into {} (map (fn [[key default & overrides]] (vector key `(c ~ek ~key ~default ~@overrides))) defs))))
