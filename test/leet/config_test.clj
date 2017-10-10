@@ -56,6 +56,10 @@
   [key]
   (str "provided-value-for-" (name key)))
 
+(defn two-arg-provider
+  [f key]
+  (str f "-" (name key)))
+
 (deftest provider-fn-test
 
   (testing "Must support function as a provider for value"
@@ -65,7 +69,11 @@
   (testing "Must support function as a provider for value in environment override"
     (is (= {:key "provided-value-for-key"} (leetconfig :test
                                                        (:key "default-value"
-                                                         :test value-provider-fn))))))
+                                                         :test value-provider-fn)))))
+
+  (testing "Must support partial defs"
+    (is (= {:key "partial-key"} (leetconfig nil
+                                           (:key (partial two-arg-provider "partial")))))))
 
 (deftest nested-structure-override-test
 
