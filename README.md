@@ -17,10 +17,10 @@ Usage should be simple. First argument to `leetconfig` is the "bootstrap" enviro
  :key-2 ["if sequential, first is the default"]
  :key-3 ["default" :env-key "Value, when bootstrapped is :env-key"]
  :key-4 ["default" :env1 "value in env1" :env2 "value in env2" :env3 "value in env3"]
- :key-from-fn my-fn ; (defn my-config-fn [key] ... get value for key ... )
- :key-from-fn-2 [my-fn]
- :key-from-fn-3 ["default value" :test my-fn] ; get it?
- :key-from-fn-4 ["default value" :test "hardcoded test" :prod my-fn] ; capiche?
+ :key-from-fn my-config-fn ; (defn my-config-fn [key] ... get value for key ... )
+ :key-from-fn-2 [my-config-fn]
+ :key-from-fn-3 ["default value" :test my-config-fn] ; get it?
+ :key-from-fn-4 ["default value" :test "hardcoded test" :prod my-config-fn] ; capiche?
  }
 ```
 
