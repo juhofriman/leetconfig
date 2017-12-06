@@ -2,4 +2,4 @@ language: clojure
 
 script:
   - lein test
-  - lein deploy
+  - lein deploy clojars
