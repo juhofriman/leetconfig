@@ -1,4 +1,4 @@
-(defproject leetconfig "0.0.3"
+(defproject leetconfig "0.0.4-SNAPHOST"
   :description "Leetconfig for neat clojure application configuration"
   :url "http://github.com/juhofriman/leetconfig"
   :license {:name "Eclipse Public License"
