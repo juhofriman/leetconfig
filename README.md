@@ -4,31 +4,40 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/leetconfig.svg)](https://clojars.org/leetconfig)
 
-Leetconfig takes your clojure application configuration in different environments into a one singe place. 
+Leetconfig takes your clojure application configuration in different environments into a one singe place.
 Additionally it gives you the freedom to retrieve parts of configuration differently in different environtments.
 The main idea is to take _all_ application configuration into one single place, where you can see all configuration
 instantly. Another main driver for this small project was to be able to use AWS EC2 Systems Manager only to certain configuration
 keys when deployed to AWS.
 
-Usage should be simple. First argument to `leetconfig` is the "bootstrap" environment argument, and after that config entries. 
-Config entry is such as 
+Usage should be simple. First argument to `leetconfig` is the "bootstrap" environment argument, and second is the configuration specification map in following form:
 
-`(ENVIRONMENT-KEY DEFAULT-VALUE ENV-1-OVERRIDE ENV-1-VALUE ... ENV-N-OVERRIDE ENV-N-VALUE)`
+```clojure
+{:configuration-key-1 "direct-default-value"
+ :key-2 ["if sequential, first is the default"]
+ :key-3 ["default" :env-key "Value, when bootstrapped is :env-key"]
+ :key-4 ["default" :env1 "value in env1" :env2 "value in env2" :env3 "value in env3"]
+ :key-from-fn my-fn ; (defn my-config-fn [key] ... get value for key ... )
+ :key-from-fn-2 [my-fn]
+ :key-from-fn-3 ["default value" :test my-fn] ; get it?
+ :key-from-fn-4 ["default value" :test "hardcoded test" :prod my-fn] ; capiche?
+ }
+```
 
-ENV-VALUE can be a literal or a function that takes the ENVIRONMENT-KEY as an argument.
+Example usage would be something like this:
 
 ```clojure
 (def config (leetconfig (env :environment)
-                        (:appname "my-leet-ap")
-                        (:db-host "localhost"
-                           :test "app-db1-test"
-                           :prod "app-db1-prod")
-                        (:db-user "localuser"
-                           :test "test-db-user"
-                           :prod "prod-db-user")
-                        (:db-pass "localpassword"
-                           :test retrieve-from-crypto-storage
-                           :prod retrieve-from-crypto-storage)))
+                        {:appname "my-leet-ap"
+                         :db-host ["localhost"
+                                   :test "app-db1-test"
+                                   :prod "app-db1-prod"]
+                         :db-user ["localuser"
+                                   :test "test-db-user"
+                                   :prod "prod-db-user"]
+                         :db-pass ["localpassword"
+                                   :test retrieve-from-crypto-storage
+                                   :prod retrieve-from-crypto-storage]}))
 
 ```
 
@@ -50,7 +59,7 @@ This will merely generate a map, with values selected or fetched via provider fu
 ```
 
 The first argument can be fetched by function or given directly. Whatever suits you. We use [environ](https://github.com/weavejester/environ)
-to fetch it from system environment and start our applications like `ENVIRONMENT=test java -jar app.jar`, and keep any other environment inside 
+to fetch it from system environment and start our applications like `ENVIRONMENT=test java -jar app.jar`, and keep any other environment inside
 our config namespace.
 
 Take a note, that leetconfig **does not** enforce how you actually use config map in your application. We use `clojure.spec` to

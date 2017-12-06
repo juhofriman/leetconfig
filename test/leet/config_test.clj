@@ -2,91 +2,51 @@
   (:require [clojure.test :refer :all]
             [leet.config :refer :all]))
 
-(deftest leetconfig-nil-environment-test
+(deftest leetconfig-with-nil-environment
 
-  (testing "Must map values by key"
-    (is (= {:key "my-value"} (leetconfig nil
-                                         (:key "my-value")))))
+  (testing "Must support direct literal value for default"
+    (is (= {:key "val"}
+           (leetconfig nil {:key "val"})))
+    (is (= {:key "val"}
+           (leetconfig nil {:key ["val"]}))))
 
   (testing "Must support multiple keys"
-    (is (= {:key-1 "my-value-1"
-            :key-2 "my-value-2"
-            :key-3 "my-value-3"
-            :key-4 "my-value-4"}
-           (leetconfig nil
-                       (:key-1 "my-value-1")
-                       (:key-2 "my-value-2")
-                       (:key-3 "my-value-3")
-                       (:key-4 "my-value-4")))))
+    (is (= {:key1 "val1" :key2 "val2"}
+           (leetconfig nil {:key1 "val1" :key2 "val2"})))
+    (is (= {:key1 "val1" :key2 "val2"}
+           (leetconfig nil {:key1 ["val1"] :key2 ["val2"]}))))
 
-  (testing "Must take default when nil environment"
-    (is (= {:value "my-value"} (leetconfig nil
-                                           (:value "my-value"
-                                             :test "test-environment-value"))))))
+  (testing "Without environment, selects first as a value"
+    (is (= {:key1 "val1"}
+           (leetconfig nil {:key1 ["val1" :test "testval"]})))))
 
-(deftest leetconfig-environment-override-test
+(deftest leetconfig-with-environment
 
-  (testing "Must map values by key"
-    (is (= {:key "test-value"} (leetconfig :test
-                                           (:key "my-value"
-                                             :test "test-value")))))
+  (testing "Must override with matching environment"
+    (is (= {:key "test-env-val"}
+           (leetconfig :test {:key ["defaultval" :test "test-env-val" :prod "prod-env-val"]})))
+    (is (= {:key "prod-env-val"}
+           (leetconfig :prod {:key ["defaultval" :test "test-env-val" :prod "prod-env-val"]}))))
 
-  (testing "Must fallback to default if environment override is not defined"
-    (is (= {:key "test-value"
-            :key-2 "default-value"}
-           (leetconfig :test
-                       (:key "my-value"
-                         :test "test-value")
-                       (:key-2 "default-value")))))
+  (testing "Must fallback if no matching environment"
+    (is (= {:key "default-value"}
+           (leetconfig :prod {:key ["default-value" :test "test-value"]})))))
 
-  (testing "Must support multiple environments"
-    (is (= {:key "the-production-value"} (leetconfig :production
-                                                     (:key "default-value"
-                                                       :test "test-value"
-                                                       :production "the-production-value"))))))
-
-(deftest leetconfig-initialization-test
-
-  (testing "must evaluate initial environment argument"
-    (is (= {:key "test-value"} (leetconfig (identity :test)
-                                           (:key "my-value"
-                                             :test "test-value"))))))
-
-(defn value-provider-fn
+(defn config-key->str
+  ":key -> \"key\""
   [key]
-  (str "provided-value-for-" (name key)))
+  (str (name key)))
 
-(defn two-arg-provider
-  [f key]
-  (str f "-" (name key)))
+(deftest leetconfig-fn-resolve-support
 
-(deftest provider-fn-test
+  (testing "Must resolve by calling if value is fn"
+    (is (= {:key "key"}
+           (leetconfig nil {:key config-key->str}))))
 
-  (testing "Must support function as a provider for value"
-    (is (= {:key "provided-value-for-key"} (leetconfig nil
-                                                       (:key value-provider-fn)))))
+  (testing "Must resolve by calling if value is fn on the default vector"
+    (is (= {:key "key"}
+           (leetconfig nil {:key [config-key->str]}))))
 
-  (testing "Must support function as a provider for value in environment override"
-    (is (= {:key "provided-value-for-key"} (leetconfig :test
-                                                       (:key "default-value"
-                                                         :test value-provider-fn)))))
-
-  (testing "Must support partial defs"
-    (is (= {:key "partial-key"} (leetconfig nil
-                                           (:key (partial two-arg-provider "partial")))))))
-
-(deftest nested-structure-override-test
-
-  (testing "Must support nested structures"
-    (is (= {:key {:a "value"}} (leetconfig nil
-                                           (:key {:a "value"})))))
-
-  (testing "Must support overriding nested structures"
-    (is (= {:key {:a "test value"}} (leetconfig :test
-                                           (:key {:a "value"}
-                                             :test {:a "test value"})))))
-
-  ;; TODO, not supported currently
-  (comment (testing "Must support nested structures partially"
-             (is (= {:key {:a "value"}} (leetconfig nil
-                                                    (:keys {:a "value"})))))))
+  (testing "Must resolve by calling if value is fn on the overrides"
+    (is (= {:key "key"}
+           (leetconfig :test {:key ["default-key" :test config-key->str]})))))
