@@ -5,12 +5,12 @@
 [![Clojars Project](https://img.shields.io/clojars/v/leetconfig.svg)](https://clojars.org/leetconfig)
 
 Leetconfig takes your clojure application configuration in different environments into a one singe place.
-Additionally it gives you the freedom to retrieve parts of configuration differently in different environtments.
-The main idea is to take _all_ application configuration into one single place, where you can see all configuration
+Additionally it gives you the freedom to retrieve parts of configuration differently in different environments.
+The main idea is to take _all_ the application configuration into a one single place, where you can see all the configuration
 instantly. Another main driver for this small project was to be able to use AWS EC2 Systems Manager only to certain configuration
-keys when deployed to AWS.
+keys when deployed to AWS. That means, you can fetch configuration values with functions such as `(fetch-my-config-value :configuration-key)`.
 
-Usage should be simple. First argument to `leetconfig` is the "bootstrap" environment argument, and second is the configuration specification map in following form:
+Usage should be simple. First argument to `leetconfig` is the "bootstrap" environment argument which defines the current environment, and second one is the configuration specification map in the following form:
 
 ```clojure
 {:configuration-key-1 "direct-default-value"
@@ -18,9 +18,9 @@ Usage should be simple. First argument to `leetconfig` is the "bootstrap" enviro
  :key-3 ["default" :env-key "Value, when bootstrapped is :env-key"]
  :key-4 ["default" :env1 "value in env1" :env2 "value in env2" :env3 "value in env3"]
  :key-from-fn my-config-fn ; (defn my-config-fn [key] ... get value for key ... )
- :key-from-fn-2 [my-config-fn]
+ :key-from-fn-2 [my-config-fn] ; wrapped in sequential as well
  :key-from-fn-3 ["default value" :test my-config-fn] ; get it?
- :key-from-fn-4 ["default value" :test "hardcoded test" :prod my-config-fn] ; capiche?
+ :key-from-fn-4 ["default value" :test "hardcoded test value in test environment" :prod my-config-fn] ; capiche?
  }
 ```
 
@@ -28,7 +28,7 @@ Example usage would be something like this:
 
 ```clojure
 (def config (leetconfig (env :environment)
-                        {:appname "my-leet-ap"
+                        {:appname "my-leet-app" ; default in all environments
                          :db-host ["localhost"
                                    :test "app-db1-test"
                                    :prod "app-db1-prod"]
@@ -69,17 +69,30 @@ assert that configuration is actually valid, and then we have something like `(d
 
 ### Partial overrides for nested structures
 
-"Partial override" support for nested structures, such as:
+"Partial override" support for nested structures in configuration map, such as:
 
 ```clojure
-(def config (leetconfig :test
-                        (:texts {:name "My application"
-                                 :environment-label "Local environment"}
-                          :test {:environment-label "Test environment"}
-                          :prod {:environment-label "Production environment"})))
-; Produces
-{:texts {:name "My application"
+(def config (leetconfig (env :environment)
+                        {:cache-seconds 100
+                         :texts [{:name "My application name"
+                                  :environment-label "Local environment"}
+
+                                 :test {:environment-label "Test environment"}
+                                 :prod {:environment-label "Production environment"}]}))
+; Produces in :local|nil
+{:cache-seconds 100
+ :texts {:name "My application"
+         :environment-label "Local environment"}}
+
+; Produces in :test
+{:cache-seconds 100
+ :texts {:name "My application"
          :environment-label "Test environment"}}
+
+; Produces in :test
+{:cache-seconds 100
+ :texts {:name "My application"
+         :environment-label "Production environment"}}
 ```
 
 ## License
